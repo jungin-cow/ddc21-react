@@ -1,4 +1,5 @@
 import { QUICK_LINKS } from '../data'
+import SmartLink from './SmartLink'
 
 export default function QuickLinks() {
   return (
@@ -6,10 +7,10 @@ export default function QuickLinks() {
       {QUICK_LINKS.map((link) => {
         const Icon = link.icon
         return (
-          <a key={link.label} className="quick-btn" href={link.href} style={{ '--mobile-order': link.mobileOrder }}>
+          <SmartLink key={link.label} item={link} className="quick-btn" style={{ '--mobile-order': link.mobileOrder }}>
             <Icon aria-hidden="true" />
             <span>{link.label}</span>
-          </a>
+          </SmartLink>
         )
       })}
     </section>

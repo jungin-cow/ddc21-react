@@ -104,3 +104,24 @@ react-app/
 | 새 영역 추가 | `components/`에 파일을 만들고 `App.jsx`에 끼워 넣기 |
 
 수정한 뒤에는 `npm run dev`로 바로 확인하고, 삼바용 결과물은 `npm run build`로 다시 만들면 됩니다.
+
+## 페이지 이동과 갤러리
+
+`main.jsx`에서 **HashRouter**(react-router-dom)로 감쌌습니다. 주소가 `index.html#/gallery`처럼 `#` 뒤에 붙기 때문에 `file://`(삼바)로 열어도 페이지 이동이 됩니다.
+
+| 주소 | 페이지 파일 | 내용 |
+|---|---|---|
+| `#/` | `src/pages/HomePage.jsx` | 메인 화면 (Hero, QuickLinks, Departments, Media) |
+| `#/gallery?cat=events&page=2` | `src/pages/GalleryPage.jsx` | 갤러리 목록. 분류 필터와 페이지 번호가 주소에 남아서 뒤로가기가 됩니다 |
+| `#/gallery/19647` | `src/pages/GalleryPostPage.jsx` | 게시물 사진 모음. 사진을 누르면 `Lightbox`로 크게 봅니다 |
+
+- **메뉴 링크:** `data.js` 항목에 `to`가 있으면 앱 안 페이지, `href`가 있으면 원본 사이트로 갑니다. `SmartLink` 컴포넌트가 이를 구분합니다.
+- **갤러리 데이터:** `src/data/gallery.json`(게시물 713개)과 `public/images/gallery/<id>.jpg`(썸네일)입니다. 데이터는 `src/gallery.js`가 읽습니다.
+- **큰 사진:** 용량(약 2GB) 때문에 받지 않고 원본 서버 주소로 불러옵니다. 인터넷이 연결되어 있어야 보입니다.
+- **2021년 이전 게시물:** 원본 서버에서도 사진 파일이 지워진 상태라 "사진 없음"으로 표시됩니다.
+- **데이터 갱신:** 원본에 새 게시물이 올라오면 아래를 실행한 뒤 결과를 복사합니다.
+  ```bash
+  python3 scripts/scrape_gallery.py /tmp/gallery-out
+  cp /tmp/gallery-out/gallery.json src/data/
+  cp /tmp/gallery-out/thumbs/*.jpg public/images/gallery/
+  ```

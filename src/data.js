@@ -17,8 +17,9 @@ export const img = (path) => `${import.meta.env.BASE_URL}images/${path}`
 export const ABOUT_URL = page(7885)
 
 // 상단 메뉴 (원본 사이트의 menu-new-main-menu)
+// to 는 이 앱 안의 페이지, href 는 원본 사이트 등 외부 주소
 export const MENU = [
-  { label: '홈', href: '#top' },
+  { label: '홈', to: '/' },
   {
     label: '교회소개',
     href: page(7885),
@@ -53,7 +54,7 @@ export const MENU = [
   },
   { label: '선교', href: page(7909) },
   { label: '굿팸', href: page(16) },
-  { label: '갤러리', href: page(276) },
+  { label: '갤러리', to: '/gallery' },
 ]
 
 // 노란 바로가기 버튼. mobileOrder 는 원본의 모바일 배치 순서.
@@ -61,7 +62,7 @@ export const QUICK_LINKS = [
   { label: '설교', icon: FaBookOpen, href: page(388), mobileOrder: 3 },
   { label: '예배안내', icon: FaChurch, href: page(7783), mobileOrder: 2 },
   { label: '온라인 교인센터', icon: FaAddressCard, href: 'https://mas3.ohjic.com/member/home/ddc21', mobileOrder: 7 },
-  { label: '교회사진', icon: FaImage, href: page(276), mobileOrder: 4 },
+  { label: '교회사진', icon: FaImage, to: '/gallery', mobileOrder: 4 },
   { label: '주보', icon: FaBook, href: page(7913), mobileOrder: 1 },
   {
     label: '온라인 새가족등록',
