@@ -24,7 +24,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/gallery/:id" element={<GalleryPostPage />} />
+          <Route path="/gallery/:boardSlug" element={<GalleryPage />} />
+          <Route path="/gallery/:boardSlug/:postId" element={<GalleryPostPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>

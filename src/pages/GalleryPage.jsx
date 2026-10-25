@@ -1,26 +1,27 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, useParams, useSearchParams } from 'react-router-dom'
 import { PHOTO_SLIDES } from '../data'
-import { CATEGORIES, PAGE_SIZE, POSTS, thumbUrl } from '../gallery'
+import { formatDate, useApi } from '../api'
 import PhotoSlider from '../components/PhotoSlider'
 import Pagination from '../components/Pagination'
 import VerseBanner from '../components/VerseBanner'
+import MediaImage from '../components/MediaImage'
+import LoadError from '../components/LoadError'
 
+const PAGE_SIZE = 12
+
+// /gallery            → 갤러리 게시판 8개 전체
+// /gallery/happykids  → 한 게시판. 페이지 번호는 ?page=2 로 주소에 남겨서 뒤로가기가 된다.
 export default function GalleryPage() {
-  // 분류와 페이지 번호를 주소(?cat=events&page=2)에 담아서, 뒤로가기와 새로고침에도 유지되게 한다.
+  const { boardSlug } = useParams()
   const [params, setParams] = useSearchParams()
-  const cat = params.get('cat') ?? ''
-  const posts = cat ? POSTS.filter((post) => post.categories.includes(cat)) : POSTS
-  const pageCount = Math.max(1, Math.ceil(posts.length / PAGE_SIZE))
-  const page = Math.min(Math.max(1, Number(params.get('page')) || 1), pageCount)
-  const visible = posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const page = Math.max(1, Number(params.get('page')) || 1)
 
-  const go = (next) => {
-    const merged = { cat, page: 1, ...next }
-    const search = {}
-    if (merged.cat) search.cat = merged.cat
-    if (merged.page > 1) search.page = String(merged.page)
-    setParams(search)
-  }
+  const boards = useApi('/boards', { type: 'gallery' })
+  const list = useApi(boardSlug ? `/galleries/${boardSlug}/posts` : '/galleries/posts', { page, size: PAGE_SIZE })
+
+  const pageCount = list.data ? Math.max(1, Math.ceil(list.data.total / PAGE_SIZE)) : 1
+  const goPage = (p) => setParams(p > 1 ? { page: String(p) } : {})
+  const board = boards.data?.items.find((b) => b.slug === boardSlug)
 
   return (
     <>
@@ -34,38 +35,58 @@ export default function GalleryPage() {
           <PhotoSlider slides={PHOTO_SLIDES} />
         </div>
 
-        <ul className="gallery-filters" aria-label="분류">
-          {[{ slug: '', name: 'All' }, ...CATEGORIES].map((c) => (
-            <li key={c.slug}>
-              <button className={c.slug === cat ? 'is-active' : ''} aria-pressed={c.slug === cat} onClick={() => go({ cat: c.slug })}>
-                {c.name}
-              </button>
+        <nav aria-label="부서">
+          <ul className="gallery-filters">
+            <li>
+              <NavLink to="/gallery" end>
+                전체
+              </NavLink>
             </li>
-          ))}
-        </ul>
+            {boards.data?.items.map((b) => (
+              <li key={b.slug}>
+                <NavLink to={`/gallery/${b.slug}`}>{b.name}</NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <p className="gallery-count">
-          게시물 {posts.length}개 · {page} / {pageCount} 페이지
+        <p className="gallery-count" aria-live="polite">
+          {list.data && `${board?.name ?? '전체'} · 게시물 ${list.data.total}개 · ${page} / ${pageCount} 페이지`}
         </p>
 
-        <div className="gallery-grid">
-          {visible.map((post) => (
-            <Link key={post.id} to={`/gallery/${post.id}`} className="gallery-card">
-              <div className="gallery-thumb">
-                {post.thumb ? (
-                  <img src={thumbUrl(post)} alt="" loading="lazy" width="400" height="300" />
-                ) : (
-                  <span className="photo-missing">사진 없음</span>
-                )}
-                {post.thumb && post.photos.length > 1 && <span className="gallery-count-badge">{post.photos.length}장</span>}
+        {list.error ? (
+          <LoadError error={list.error} onRetry={list.reload} />
+        ) : list.loading ? (
+          <div className="gallery-grid" aria-busy="true" aria-label="불러오는 중">
+            {Array.from({ length: PAGE_SIZE }, (_, i) => (
+              <div key={i} className="gallery-card is-skeleton">
+                <div className="gallery-thumb" />
+                <span className="skeleton-line" />
+                <span className="skeleton-line is-short" />
               </div>
-              <h2>{post.title}</h2>
-              {post.categoryNames.length > 0 && <p className="gallery-cat">{post.categoryNames.join(', ')}</p>}
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : list.data.items.length === 0 ? (
+          <p className="gallery-empty">등록된 글이 없습니다.</p>
+        ) : (
+          <div className="gallery-grid">
+            {list.data.items.map((post) => (
+              <Link key={post.id} to={`/gallery/${post.board.slug}/${post.id}`} className="gallery-card">
+                <div className="gallery-thumb">
+                  <MediaImage media={post.cover} alt="" />
+                  {post.imageCount > 1 && <span className="gallery-count-badge">{post.imageCount}장</span>}
+                </div>
+                <h2>{post.title || '(제목 없음)'}</h2>
+                <p className="gallery-cat">
+                  {!boardSlug && `${post.board.name} · `}
+                  <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
 
-        <Pagination page={page} pageCount={pageCount} onChange={(p) => go({ page: p })} />
+        <Pagination page={page} pageCount={pageCount} onChange={goPage} />
       </section>
       <VerseBanner />
     </>

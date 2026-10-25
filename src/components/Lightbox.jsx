@@ -2,10 +2,12 @@ import { useEffect, useRef } from 'react'
 import { FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa'
 
 // 사진 크게 보기. 키보드(← → Esc)와 손가락 밀기로 넘긴다.
-export default function Lightbox({ photos, index, onChange, onClose }) {
+// items 는 API 미디어 객체 목록이다. 사진은 large 사이즈를, 영상은 <video>로 보여준다.
+export default function Lightbox({ items, index, onChange, onClose }) {
   const touchX = useRef(null)
   const closeRef = useRef(null)
-  const count = photos.length
+  const count = items.length
+  const item = items[index]
   const prev = () => onChange((index - 1 + count) % count)
   const next = () => onChange((index + 1) % count)
 
@@ -18,6 +20,12 @@ export default function Lightbox({ photos, index, onChange, onClose }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [index, count, onChange, onClose])
+
+  // 다음 사진 1장을 미리 받아 둔다.
+  useEffect(() => {
+    const upcoming = items[(index + 1) % count]
+    if (upcoming?.type === 'image') new Image().src = upcoming.variants.large.url
+  }, [items, index, count])
 
   // 열려 있는 동안 뒤 페이지 스크롤 막기
   useEffect(() => {
@@ -44,7 +52,11 @@ export default function Lightbox({ photos, index, onChange, onClose }) {
         touchX.current = null
       }}
     >
-      <img key={photos[index]} src={photos[index]} alt="" />
+      {item.type === 'video' ? (
+        <video key={item.id} src={item.url} controls autoPlay playsInline preload="metadata" />
+      ) : (
+        <img key={item.id} src={item.variants.large.url} alt={item.alt} />
+      )}
       <p className="lightbox-count">
         {index + 1} / {count}
       </p>

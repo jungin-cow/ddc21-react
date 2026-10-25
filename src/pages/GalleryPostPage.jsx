@@ -1,99 +1,130 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
-import { POSTS, findPost, photoUrl } from '../gallery'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import { FaArrowLeft, FaChevronLeft, FaChevronRight, FaPlay } from 'react-icons/fa'
+import { formatDate, useApi } from '../api'
 import Lightbox from '../components/Lightbox'
 import VerseBanner from '../components/VerseBanner'
+import MediaImage from '../components/MediaImage'
+import LoadError from '../components/LoadError'
+import PostBody from '../components/PostBody'
 
-// 게시물이 바뀌면 key 로 상태(크게 보기, 깨진 사진 목록)를 새로 시작한다.
+// 게시물이 바뀌면 key 로 상태(크게 보기)를 새로 시작한다.
 export default function GalleryPostPage() {
-  const { id } = useParams()
-  return <GalleryPost key={id} id={id} />
+  const { boardSlug, postId } = useParams()
+  return <GalleryPost key={postId} boardSlug={boardSlug} postId={postId} />
 }
 
-function GalleryPost({ id }) {
-  const post = findPost(id)
+function GalleryPost({ boardSlug, postId }) {
+  const { data: post, error, loading, reload } = useApi(`/posts/${encodeURIComponent(postId)}`)
   const [open, setOpen] = useState(null) // 크게 보는 사진 번호
-  const [broken, setBroken] = useState(() => new Set()) // 불러오지 못한 사진 번호
+  const backTo = `/gallery/${boardSlug}`
 
-  if (!post) {
+  if (error) {
     return (
       <section className="gallery container">
-        <p className="gallery-empty">게시물을 찾을 수 없습니다.</p>
-        <Link className="back-link" to="/gallery">
+        {error.status === 404 ? <p className="gallery-empty">게시물을 찾을 수 없습니다.</p> : <LoadError error={error} onRetry={reload} />}
+        <Link className="back-link" to={backTo}>
           <FaArrowLeft /> 갤러리 목록
         </Link>
       </section>
     )
   }
 
-  // 목록 순서(최신순) 기준 이전/다음 게시물
-  const index = POSTS.indexOf(post)
-  const newer = POSTS[index - 1]
-  const older = POSTS[index + 1]
+  // 주소의 게시판과 실제 게시판이 다르면 맞는 주소로 바꾼다.
+  if (post?.board && post.board.slug !== boardSlug) return <Navigate to={`/gallery/${post.board.slug}/${post.id}`} replace />
 
   return (
     <>
       <article className="gallery container">
-        <Link className="back-link" to="/gallery">
-          <FaArrowLeft /> 갤러리 목록
+        <Link className="back-link" to={backTo}>
+          <FaArrowLeft /> {post?.board?.name ?? '갤러리'} 목록
         </Link>
-        <header className="post-title">
-          {post.categoryNames.length > 0 && <p className="gallery-cat">{post.categoryNames.join(', ')}</p>}
-          <h1>{post.title}</h1>
-          <p className="post-meta">사진 {post.photos.length}장</p>
-        </header>
 
-        {!post.thumb && <p className="post-notice">오래된 게시물이라 원본 서버에 사진 파일이 남아 있지 않을 수 있습니다.</p>}
+        {loading ? (
+          <div aria-busy="true" aria-label="불러오는 중">
+            <header className="post-title">
+              <span className="skeleton-line is-short" />
+              <span className="skeleton-line is-title" />
+            </header>
+            <div className="post-photos">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} className="post-photo is-skeleton" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <header className="post-title">
+              {post.board && <p className="gallery-cat">{post.board.name}</p>}
+              <h1>{post.title || '(제목 없음)'}</h1>
+              <p className="post-meta">
+                <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+                {post.images.length > 0 && ` · 사진 ${post.images.length}장`}
+              </p>
+            </header>
 
-        <div className="post-photos">
-          {post.photos.map(([path, width, height], i) =>
-            broken.has(i) ? (
-              <div key={path} className="post-photo">
-                <span className="photo-missing">사진 없음</span>
+            <PostBody html={post.body} />
+
+            {post.images.length > 0 ? (
+              <div className="post-photos">
+                {post.images.map((media, i) => (
+                  <button
+                    key={media.id}
+                    className="post-photo"
+                    onClick={() => setOpen(i)}
+                    aria-label={`${i + 1}번째 ${media.type === 'video' ? '영상 재생' : '사진 크게 보기'}`}
+                  >
+                    {media.type === 'video' ? (
+                      <span className="post-video">
+                        <FaPlay />
+                      </span>
+                    ) : (
+                      <MediaImage media={media} alt="" />
+                    )}
+                  </button>
+                ))}
               </div>
             ) : (
-              <button key={path} className="post-photo" onClick={() => setOpen(i)} aria-label={`${i + 1}번째 사진 크게 보기`}>
-                <img
-                  src={photoUrl(path)}
-                  alt=""
-                  loading="lazy"
-                  width={width || undefined}
-                  height={height || undefined}
-                  onError={() => setBroken((prev) => new Set(prev).add(i))}
-                />
-              </button>
-            ),
-          )}
-        </div>
+              !post.body?.trim() && <p className="gallery-empty">등록된 사진이 없습니다.</p>
+            )}
 
-        <nav className="post-nav" aria-label="다른 게시물">
-          {newer ? (
-            <Link to={`/gallery/${newer.id}`} className="post-nav-link">
-              <FaChevronLeft />
-              <span>
-                <small>다음 게시물</small>
-                {newer.title}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {older && (
-            <Link to={`/gallery/${older.id}`} className="post-nav-link is-older">
-              <span>
-                <small>이전 게시물</small>
-                {older.title}
-              </span>
-              <FaChevronRight />
-            </Link>
-          )}
-        </nav>
+            {post.tags.length > 0 && (
+              <ul className="post-tags" aria-label="태그">
+                {post.tags.map((t) => (
+                  <li key={t.slug}>#{t.name}</li>
+                ))}
+              </ul>
+            )}
+
+            <nav className="post-nav" aria-label="다른 게시물">
+              {post.next ? (
+                <Link to={`${backTo}/${post.next.id}`} className="post-nav-link">
+                  <FaChevronLeft />
+                  <span>
+                    <small>다음 게시물</small>
+                    {post.next.title || '(제목 없음)'}
+                  </span>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {post.prev && (
+                <Link to={`${backTo}/${post.prev.id}`} className="post-nav-link is-older">
+                  <span>
+                    <small>이전 게시물</small>
+                    {post.prev.title || '(제목 없음)'}
+                  </span>
+                  <FaChevronRight />
+                </Link>
+              )}
+            </nav>
+          </>
+        )}
       </article>
       <VerseBanner />
 
-      {open !== null && (
-        <Lightbox photos={post.photos.map(([path]) => photoUrl(path))} index={open} onChange={setOpen} onClose={() => setOpen(null)} />
+      {open !== null && post && (
+        <Lightbox items={post.images} index={open} onChange={setOpen} onClose={() => setOpen(null)} />
       )}
     </>
   )

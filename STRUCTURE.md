@@ -8,7 +8,9 @@ React 프로젝트는 "내용 데이터"와 "화면 조각"을 나눈 구조입�
 ```
 react-app/
 ├── index.html          ← 페이지 뼈대 (제목, 폰트 CSS 연결, #root)
-├── vite.config.js      ← 빌드 설정 (file:// 로 열리게 하는 핵심)
+├── vite.config.js      ← 빌드 설정, 개발 중 /api 프록시
+├── .env.example        ← API 서버의 DB 접속 정보 예시 (.env 로 복사)
+├── server/             ← API 서버 (MySQL ddc21_c 조회)
 ├── package.json        ← 의존성: react, react-icons, vite-plugin-singlefile
 ├── public/             ← 가공 없이 그대로 복사되는 파일
 │   ├── favicon.png
@@ -27,7 +29,7 @@ react-app/
 │       ├── Media.jsx
 │       ├── PhotoSlider.jsx
 │       └── Footer.jsx
-└── dist/               ← npm run build 결과물 (삼바로 여는 것)
+└── dist/               ← npm run build 결과물 (npm start 가 같이 내보냄)
 ```
 
 ## 화면과 컴포넌트 대응
@@ -103,7 +105,7 @@ react-app/
 | 슬라이드 넘김 속도 | `PhotoSlider.jsx`의 `INTERVAL` |
 | 새 영역 추가 | `components/`에 파일을 만들고 `App.jsx`에 끼워 넣기 |
 
-수정한 뒤에는 `npm run dev`로 바로 확인하고, 삼바용 결과물은 `npm run build`로 다시 만들면 됩니다.
+수정한 뒤에는 `npm run server` + `npm run dev`로 바로 확인하고, 배포용은 `npm run build` 후 `npm start`로 띄웁니다.
 
 ## 페이지 이동과 갤러리
 
@@ -116,12 +118,37 @@ react-app/
 | `#/gallery/19647` | `src/pages/GalleryPostPage.jsx` | 게시물 사진 모음. 사진을 누르면 `Lightbox`로 크게 봅니다 |
 
 - **메뉴 링크:** `data.js` 항목에 `to`가 있으면 앱 안 페이지, `href`가 있으면 원본 사이트로 갑니다. `SmartLink` 컴포넌트가 이를 구분합니다.
-- **갤러리 데이터:** `src/data/gallery.json`(게시물 713개)과 `public/images/gallery/<id>.jpg`(썸네일)입니다. 데이터는 `src/gallery.js`가 읽습니다.
-- **큰 사진:** 용량(약 2GB) 때문에 받지 않고 원본 서버 주소로 불러옵니다. 인터넷이 연결되어 있어야 보입니다.
-- **2021년 이전 게시물:** 원본 서버에서도 사진 파일이 지워진 상태라 "사진 없음"으로 표시됩니다.
-- **데이터 갱신:** 원본에 새 게시물이 올라오면 아래를 실행한 뒤 결과를 복사합니다.
-  ```bash
-  python3 scripts/scrape_gallery.py /tmp/gallery-out
-  cp /tmp/gallery-out/gallery.json src/data/
-  cp /tmp/gallery-out/thumbs/*.jpg public/images/gallery/
-  ```
+- **갤러리 데이터:** 로컬 MySQL `ddc21_c`를 API 서버(`server/`)가 읽어서 JSON으로 줍니다. 화면은 `src/api.js`의 `useApi`로 받습니다. 아래 "API 서버"를 보세요.
+
+## API 서버 (`server/`)
+
+DB 명세(`../DDC_DB/DDC_db_design.md`)와 페이지 설계 가이드(`../DDC_DB/DDC_homepage_design_guide.md`)의 `/api/v1` 규칙을 따릅니다.
+
+| 파일 | 하는 일 |
+|---|---|
+| `server/index.js` | 라우트, 파라미터 검사(400), 오류 형식 `{ error, message }`, `dist/` 내보내기 |
+| `server/db.js` | MySQL 연결(.env). DATETIME(UTC)을 KST ISO 문자열로 바꾸는 `toKst` |
+| `server/media.js` | 객체 키 → 이미지 URL, `media` + `media_variants` → 미디어 객체 |
+
+| API | 화면 |
+|---|---|
+| `GET /api/v1/boards?type=gallery` | 갤러리 부서 탭 (공개 글이 있는 게시판만, `sort_order` 순) |
+| `GET /api/v1/galleries/posts?page=&size=` | 갤러리 전체 목록 (8개 게시판 합쳐서 최신순) |
+| `GET /api/v1/galleries/{slug}/posts?page=&size=` | 부서별 목록. 대표 사진(small), 사진 수 |
+| `GET /api/v1/posts/{id}` | 상세. 사진(small/medium/large), 본문, 태그, 같은 게시판의 이전/다음 글 |
+
+- 공개 글(`status='publish'`)만 조회합니다. `size`는 최대 48입니다.
+- 사진 목록은 `post_media`의 `gallery` → `attachment` 순입니다. `inline`은 본문에 이미 있어서 뺍니다. HEIC와 pptx도 브라우저에서 보여줄 수 없어서 뺍니다. mp4는 영상으로 내려줍니다.
+- **한글 파일명 주의:** DB 키는 NFC인데, GCS에는 NFD(자모 분리)로 올라간 파일과 NFC인 파일이 섞여 있습니다. 그래서 서버가 시작할 때 버킷의 객체 목록(약 9.5만 개, 10초 정도)을 받아 "NFC 키 → 실제 이름" 표를 만듭니다. 목록은 `server/.cache/gcs-objects.json`에 하루 동안 캐시되고, `npm run media:refresh`로 바로 새로 받을 수 있습니다.
+- 그래도 GCS에 아예 없는 파일이 있습니다(갤러리 대표 사진 707장 중 11장). 화면은 "사진 없음"으로 표시합니다.
+
+## 갤러리 화면
+
+| 주소 | 페이지 파일 | 내용 |
+|---|---|---|
+| `#/gallery` | `GalleryPage.jsx` | 전체 갤러리. 부서 탭, 카드(대표 사진 · 제목 · 부서 · 날짜 · 사진 수), 페이지당 12개 |
+| `#/gallery/happykids?page=2` | `GalleryPage.jsx` | 부서별 목록. 페이지 번호가 주소에 남아서 뒤로가기가 됩니다 |
+| `#/gallery/happykids/19574` | `GalleryPostPage.jsx` | 상세. 본문(`PostBody`, DOMPurify로 sanitize) → 사진 그리드(small) → `Lightbox`(large, 영상은 `<video>`) → 이전/다음 글 |
+
+- 불러오는 동안에는 스켈레톤을 보여주고, 실패하면 `LoadError`에 "다시 시도" 버튼을 띄웁니다. 사진을 못 불러오면 `MediaImage`가 "사진 없음"으로 바꿉니다.
+- 상세 주소의 게시판이 실제 게시판과 다르면 맞는 주소로 바꿉니다.
