@@ -52,7 +52,7 @@ export const MENU = [
       { label: '사역 훈련', href: page(7851) },
     ],
   },
-  { label: '선교', href: page(7909) },
+  { label: '선교', to: '/mission' },
   { label: '굿팸', href: page(16) },
   { label: '갤러리', to: '/gallery' },
 ]
@@ -74,13 +74,13 @@ export const QUICK_LINKS = [
   { label: '오시는길', icon: FaBookmark, href: page(7787), mobileOrder: 8 },
 ]
 
-// 부서/예배 아이콘 카드
+// 부서/예배 아이콘 카드 (to 는 이 앱 안의 페이지, href 는 원본 사이트 등 외부 주소)
 export const DEPARTMENTS = [
   { label: '예배실황', icon: 'icon-youtube.png', href: 'https://www.youtube.com/channel/UCIHx0cbc_YdfDPgkF5PNqUA/live' },
   { label: '기쁨키즈(유아부)', icon: 'icon-joy.png', href: page(609) },
   { label: '드림키즈(유치부)', icon: 'icon-dream.png', href: page(1785) },
   { label: '디포스(유년부)', icon: 'icon-dforce2.png', href: page(10829) },
-  { label: '선교활동', icon: 'icon-mission.png', href: page(7909) },
+  { label: '선교활동', icon: 'icon-mission.png', to: '/mission' },
   { label: '디포스(초등부)', icon: 'icon-dforce1.png', href: page(613) },
   { label: '두드림(청소년부)', icon: 'icon-dodream.png', href: page(611) },
   { label: '청년부(데클레시아)', icon: 'icon-youth.png', href: page(10714) },

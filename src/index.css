@@ -958,6 +958,228 @@ button {
   }
 }
 
+/* ---------- Mission ---------- */
+.mission {
+  padding-top: 70px;
+  padding-bottom: 100px;
+}
+
+.mission-slogan {
+  margin: 40px 0 0;
+  padding: 36px 40px;
+  border: 1px solid #eee;
+  box-shadow: 8px 8px 0 #f2f2f2;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: #333;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.mission-map-box {
+  margin-top: 60px;
+  border: 3px solid #444;
+  background: #fff;
+}
+
+.mission-map {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mission-ocean {
+  fill: #bfbfbf;
+}
+
+.mission-country {
+  fill: #fff;
+  stroke: #d6d6d6;
+  stroke-width: 0.5;
+}
+
+.mission-region {
+  fill: var(--mission-color);
+  stroke: #fff;
+  stroke-width: 0.8;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.mission-region:hover,
+.mission-region:focus-visible {
+  filter: brightness(0.82);
+  outline: none;
+}
+
+.mission-region.is-selected {
+  stroke: #222;
+  stroke-width: 1.5;
+}
+
+circle.mission-region {
+  stroke-width: 2;
+}
+
+.mission-note {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #555;
+}
+
+.mission-note span {
+  color: #f00;
+}
+
+.mission-list-title {
+  margin: 70px 0 0;
+  font-size: 22px;
+  font-weight: 500;
+  color: #222;
+}
+
+.mission-list-title span {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.mission-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px 24px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mission-card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mission-card-thumb {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-bottom: 4px solid var(--mission-color);
+  background: var(--card-bg);
+}
+
+.mission-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s;
+}
+
+.mission-card:hover .mission-card-thumb img {
+  transform: scale(1.05);
+}
+
+.mission-card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+  transition: color 0.2s;
+}
+
+.mission-card:hover strong {
+  color: var(--navy);
+}
+
+.mission-region-label {
+  display: block;
+  margin-top: 12px;
+  color: var(--mission-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mission-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.mission-dialog {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border-top: 5px solid var(--mission-color);
+  background: #fff;
+  animation: lightbox-in 0.25s ease both;
+}
+
+.mission-dialog > img {
+  width: 100%;
+}
+
+.mission-dialog-body {
+  padding: 4px 28px 28px;
+}
+
+.mission-dialog h2 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 500;
+  color: #222;
+}
+
+.mission-dialog dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 20px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.mission-dialog dt {
+  color: var(--muted);
+}
+
+.mission-dialog dd {
+  margin: 0;
+}
+
+.mission-dialog-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18px;
+}
+
+.mission-dialog-close:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
 /* ---------- Footer ---------- */
 .footer {
   background: var(--footer-bg);
@@ -1125,6 +1347,10 @@ button {
   .post-photos {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .mission-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
@@ -1227,6 +1453,36 @@ button {
 
   .lightbox {
     padding: 56px 0;
+  }
+
+  .mission {
+    padding-top: 40px;
+    padding-bottom: 60px;
+  }
+
+  .mission-slogan {
+    margin-top: 24px;
+    padding: 22px 18px;
+    font-size: 18px;
+  }
+
+  .mission-map-box {
+    margin-top: 30px;
+    border-width: 2px;
+  }
+
+  .mission-list-title {
+    margin-top: 44px;
+    font-size: 19px;
+  }
+
+  .mission-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 12px;
+  }
+
+  .mission-card strong {
+    font-size: 13px;
   }
 
   .lightbox-arrow {

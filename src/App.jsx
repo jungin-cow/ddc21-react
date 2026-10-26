@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import GalleryPage from './pages/GalleryPage'
 import GalleryPostPage from './pages/GalleryPostPage'
+import MissionPage from './pages/MissionPage'
 
 // 페이지가 바뀌면 맨 위로 스크롤
 function ScrollToTop() {
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/gallery/:boardSlug" element={<GalleryPage />} />
           <Route path="/gallery/:boardSlug/:postId" element={<GalleryPostPage />} />
+          <Route path="/mission" element={<MissionPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>
